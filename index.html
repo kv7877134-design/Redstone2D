@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электрик 2D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background: #1a1a2e;
+            color: #e6e6e6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #ff9a3c;
+            margin-bottom: 5px;
+        }
+        
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .toolbar {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+            width: 200px;
+        }
+        
+        .toolbar h2 {
+            color: #ff9a3c;
+            margin-bottom: 15px;
+        }
+        
+        .tool {
+            background: #0f3460;
+            border: 2px solid #8ecddd;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-align: center;
+        }
+        
+        .tool.active {
+            border-color: #ff9a3c;
+            background: #1a3a5f;
+        }
+        
+        .workspace {
+            flex: 1;
+            background: #16213e;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: #0f3460;
+            color: #e6e6e6;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(20, 25px);
+            grid-template-rows: repeat(15, 25px);
+            gap: 1px;
+        }
+        
+        .cell {
+            width: 25px;
+            height: 25px;
+            background: #1a3a5f;
+            border: 1px solid #2a4a7a;
+            cursor: pointer;
+        }
+        
+        .lever {
+            background: #8a6642;
+        }
+        
+        .lever.active {
+            background: #ff9a3c;
+        }
+        
+        .wire {
+            background: #8a6642;
+        }
+        
+        .wire.active {
+            background: #ff5151;
+        }
+        
+        .repeater {
+            background: #8a6642;
+        }
+        
+        .repeater.active {
+            background: #ff5151;
+        }
+        
+        .lamp {
+            background: #8a6642;
+            border-radius: 50%;
+        }
+        
+        .lamp.active {
+            background: #ffdd59;
+        }
+        
+        .mode-selector {
+            display: flex;
+            margin-top: 15px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #0f3460;
+            cursor: pointer;
+        }
+        
+        .mode-btn.active {
+            background: #ff9a3c;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Электрик 2D</h1>
+        <div>2D симулятор редстоуна</div>
+    </header>
+    
+    <div class="container">
+        <div class="toolbar">
+            <h2>Компоненты</h2>
+            <div class="tool active" data-type="lever">Рычаг</div>
+            <div class="tool" data-type="wire">Провод</div>
+            <div class="tool" data-type="repeater">Удлинитель</div>
+            <div class="tool" data-type="lamp">Лампа</div>
+            
+            <div class="mode-selector">
+                <div class="mode-btn active" data-mode="place">Ставить</div>
+                <div class="mode-btn" data-mode="delete">Удалить</div>
+            </div>
+        </div>
+        
+        <div class="workspace">
+            <div class="controls">
+                <button id="clearBtn">Очистить</button>
+                <button id="resetBtn">Сбросить</button>
+            </div>
+            <div id="grid"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('grid');
+            const tools = document.querySelectorAll('.tool');
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            const clearBtn = document.getElementById('clearBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            let selectedTool = 'lever';
+            let currentMode = 'place';
+            let gridData = [];
+            const gridWidth = 20;
+            const gridHeight = 15;
+            
+            // Инициализация сетки
+            function initGrid() {
+                grid.innerHTML = '';
+                gridData = [];
+                
+                for (let y = 0; y < gridHeight; y++) {
+                    gridData[y] = [];
+                    for (let x = 0; x < gridWidth; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        cell.addEventListener('click', function() {
+                            handleCellClick(x, y);
+                        });
+                        
+                        grid.appendChild(cell);
+                        gridData[y][x] = { 
+                            type: 'empty', 
+                            active: false
+                        };
+                    }
+                }
+            }
+            
+            // Выбор инструмента
+            tools.forEach(tool => {
+                tool.addEventListener('click', function() {
+                    tools.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTool = this.dataset.type;
+                });
+            });
+            
+            // Выбор режима
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMode = this.dataset.mode;
+                });
+            });
+            
+            // Обработка клика по ячейке
+            function handleCellClick(x, y) {
+                if (currentMode === 'delete') {
+                    removeComponent(x, y);
+                    return;
+                }
+                
+                if (gridData[y][x].type !== 'empty') {
+                    if (gridData[y][x].type === 'lever') {
+                        toggleLever(x, y);
+                    }
+                } else {
+                    placeComponent(x, y);
+                }
+            }
+            
+            // Размещение компонента
+            function placeComponent(x, y) {
+                gridData[y][x].type = selectedTool;
+                gridData[y][x].active = false;
+                
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                cell.className = `cell ${selectedTool}`;
+            }
+            
+            // Удаление компонента
+            function removeComponent(x, y) {
+                gridData[y][x].type = 'empty';
+                gridData[y][x].active = false;
+                
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                cell.className = 'cell';
+            }
+            
+            // Переключение рычага
+            function toggleLever(x, y) {
+                gridData[y][x].active = !gridData[y][x].active;
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                
+                if (gridData[y][x].active) {
+                    cell.classList.add('active');
+                    updateCircuit();
+                } else {
+                    cell.classList.remove('active');
+                    resetCircuit();
+                }
+            }
+            
+            // Обновление цепи
+            function updateCircuit() {
+                resetCircuit();
+                
+                // Находим все активные рычаги
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'lever' && gridData[y][x].active) {
+                            // Запускаем распространение сигнала от рычага
+                            propagateSignal(x, y, 15, new Set());
+                        }
+                    }
+                }
+            }
+            
+            // Распространение сигнала (рекурсивно)
+            function propagateSignal(x, y, power, visited) {
+                if (power <= 0) return;
+                
+                const key = `${x},${y}`;
+                if (visited.has(key)) return;
+                visited.add(key);
+                
+                const cell = gridData[y][x];
+                
+                // Если это проводной компонент и не активирован - активируем
+                if ((cell.type === 'wire' || cell.type === 'repeater' || cell.type === 'lamp') && !cell.active) {
+                    cell.active = true;
+                    const cellElement = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                    cellElement.classList.add('active');
+                    
+                    // Для удлинителя усиливаем сигнал
+                    if (cell.type === 'repeater') {
+                        power = 15;
+                    } else {
+                        power = power - 1;
+                    }
+                    
+                    // Для лампы останавливаемся
+                    if (cell.type === 'lamp') {
+                        return;
+                    }
+                }
+                
+                // Проверяем все 4 направления
+                const directions = [
+                    {dx: 1, dy: 0},   // право
+                    {dx: -1, dy: 0},  // лево
+                    {dx: 0, dy: 1},   // низ
+                    {dx: 0, dy: -1}   // верх
+                ];
+                
+                for (const dir of directions) {
+                    const nx = x + dir.dx;
+                    const ny = y + dir.dy;
+                    
+                    if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                        const neighbor = gridData[ny][nx];
+                        if (neighbor.type === 'wire' || neighbor.type === 'repeater' || neighbor.type === 'lamp') {
+                            propagateSignal(nx, ny, power, new Set(visited));
+                        }
+                    }
+                }
+            }
+            
+            // Сброс цепи
+            function resetCircuit() {
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type !== 'lever') {
+                            gridData[y][x].active = false;
+                            const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                            cell.classList.remove('active');
+                        }
+                    }
+                }
+            }
+            
+            // Очистка сетки
+            clearBtn.addEventListener('click', initGrid);
+            
+            // Сброс цепи
+            resetBtn.addEventListener('click', function() {
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'lever') {
+                            gridData[y][x].active = false;
+                            const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                            cell.classList.remove('active');
+                        }
+                    }
+                }
+                resetCircuit();
+            });
+            
+            // Инициализация
+            initGrid();
+        });
+    </script>
+</body>
+</html>
