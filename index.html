@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электрик 2D</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #1a1a2e;
+            color: #e6e6e6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 15px;
+            background: #16213e;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            color: #ff9a3c;
+            margin-bottom: 5px;
+            font-size: 1.8rem;
+        }
+        
+        .subtitle {
+            color: #8ecddd;
+            font-size: 1rem;
+        }
+        
+        .container {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                flex-direction: row;
+            }
+        }
+        
+        .toolbar {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            flex: 0 0 200px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .toolbar h2 {
+            color: #ff9a3c;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            text-align: center;
+        }
+        
+        .tools {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .tools {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .tool {
+            background: #0f3460;
+            border: 2px solid #8ecddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            cursor: grab;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        
+        .tool:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tool:active {
+            cursor: grabbing;
+        }
+        
+        .tool.active {
+            border-color: #ff9a3c;
+            background: #1a3a5f;
+        }
+        
+        .tool-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .workspace {
+            flex: 1;
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .workspace-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .workspace-title {
+            color: #ff9a3c;
+            font-size: 1.3rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            background: #0f3460;
+            color: #e6e6e6;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #1a3a5f;
+        }
+        
+        .grid-container {
+            flex: 1;
+            background: #0f3460;
+            border-radius: 8px;
+            overflow: auto;
+            position: relative;
+        }
+        
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(30, 20px);
+            grid-template-rows: repeat(20, 20px);
+            gap: 1px;
+            padding: 10px;
+            background: #1a3a5f;
+        }
+        
+        .cell {
+            width: 20px;
+            height: 20px;
+            background: #1a3a5f;
+            border: 1px solid #2a4a7a;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .cell.active {
+            background: #ff5151;
+        }
+        
+        .lever {
+            background: #8a6642;
+            border-radius: 3px;
+        }
+        
+        .lever.active {
+            background: #ff9a3c;
+        }
+        
+        .wire {
+            background: #8a6642;
+        }
+        
+        .wire.active {
+            background: #ff5151;
+        }
+        
+        .repeater {
+            background: #8a6642;
+            border-radius: 3px;
+        }
+        
+        .repeater.active {
+            background: #ff5151;
+        }
+        
+        .lamp {
+            background: #8a6642;
+            border-radius: 50%;
+        }
+        
+        .lamp.active {
+            background: #ffdd59;
+            box-shadow: 0 0 10px #ffdd59;
+        }
+        
+        .instructions {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .instructions h2 {
+            color: #ff9a3c;
+            margin-bottom: 10px;
+            font-size: 1.3rem;
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            line-height: 1.5;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .power-level {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 8px;
+            color: white;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 15px;
+            margin-top: 15px;
+            color: #8ecddd;
+            font-size: 0.9rem;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            background: #0f3460;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .mode-btn.active {
+            background: #ff9a3c;
+            color: #1a1a2e;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Электрик 2D</h1>
+        <div class="subtitle">2D симулятор редстоуна</div>
+    </header>
+    
+    <div class="container">
+        <div class="toolbar">
+            <h2>Компоненты</h2>
+            <div class="tools">
+                <div class="tool active" data-type="lever">
+                    <div class="tool-icon">⛶</div>
+                    <div>Рычаг</div>
+                </div>
+                <div class="tool" data-type="wire">
+                    <div class="tool-icon">⎯</div>
+                    <div>Провод</div>
+                </div>
+                <div class="tool" data-type="repeater">
+                    <div class="tool-icon">⇨</div>
+                    <div>Удлинитель</div>
+                </div>
+                <div class="tool" data-type="lamp">
+                    <div class="tool-icon">○</div>
+                    <div>Сигнальный блок</div>
+                </div>
+            </div>
+            
+            <div class="mode-selector">
+                <div class="mode-btn active" data-mode="place">Ставить</div>
+                <div class="mode-btn" data-mode="delete">Удалить</div>
+            </div>
+        </div>
+        
+        <div class="workspace">
+            <div class="workspace-header">
+                <div class="workspace-title">Рабочая область</div>
+                <div class="controls">
+                    <button id="clearBtn">Очистить</button>
+                    <button id="resetBtn">Сбросить</button>
+                </div>
+            </div>
+            <div class="grid-container">
+                <div id="grid"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h2>Как использовать:</h2>
+        <ul>
+            <li><strong>Рычаг</strong> - источник сигнала, кликните чтобы активировать/деактивировать</li>
+            <li><strong>Провод</strong> - передает сигнал на расстояние до 15 блоков, автоматически поворачивает</li>
+            <li><strong>Удлинитель</strong> - усиливает сигнал, передавая его еще на 15 блоков</li>
+            <li><strong>Сигнальный блок</strong> - светится при получении сигнала</li>
+            <li>Выберите режим "Ставить" для размещения компонентов или "Удалить" для их удаления</li>
+            <li>Кликните на рычаг на сетке, чтобы активировать/деактивировать его</li>
+        </ul>
+    </div>
+    
+    <footer>
+        Электрик 2D - 2D симулятор редстоуна | Создано для демонстрации механики
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('grid');
+            const tools = document.querySelectorAll('.tool');
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            const clearBtn = document.getElementById('clearBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            let selectedTool = 'lever';
+            let currentMode = 'place'; // 'place' или 'delete'
+            let gridData = [];
+            const gridWidth = 30;
+            const gridHeight = 20;
+            
+            // Инициализация сетки
+            function initGrid() {
+                grid.innerHTML = '';
+                gridData = [];
+                
+                for (let y = 0; y < gridHeight; y++) {
+                    gridData[y] = [];
+                    for (let x = 0; x < gridWidth; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        cell.addEventListener('click', function() {
+                            handleCellClick(x, y);
+                        });
+                        
+                        grid.appendChild(cell);
+                        gridData[y][x] = { 
+                            type: 'empty', 
+                            active: false, 
+                            power: 0
+                        };
+                    }
+                }
+            }
+            
+            // Выбор инструмента
+            tools.forEach(tool => {
+                tool.addEventListener('click', function() {
+                    tools.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTool = this.dataset.type;
+                });
+            });
+            
+            // Выбор режима
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMode = this.dataset.mode;
+                });
+            });
+            
+            // Обработка клика по ячейке
+            function handleCellClick(x, y) {
+                if (currentMode === 'delete') {
+                    removeComponent(x, y);
+                } else {
+                    // Режим размещения
+                    if (gridData[y][x].type !== 'empty') {
+                        // Если ячейка занята и это рычаг - переключаем его
+                        if (gridData[y][x].type === 'lever') {
+                            toggleLever(x, y);
+                        }
+                        // Иначе удаляем существующий компонент и ставим новый
+                        else {
+                            removeComponent(x, y);
+                            placeComponent(x, y);
+                        }
+                    } else {
+                        // Если ячейка пустая - просто размещаем компонент
+                        placeComponent(x, y);
+                    }
+                }
+            }
+            
+            // Размещение компонента
+            function placeComponent(x, y) {
+                gridData[y][x].type = selectedTool;
+                gridData[y][x].active = false;
+                gridData[y][x].power = 0;
+                
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                cell.className = 'cell ' + selectedTool;
+                
+                updateCircuit();
+            }
+            
+            // Удаление компонента
+            function removeComponent(x, y) {
+                gridData[y][x].type = 'empty';
+                gridData[y][x].active = false;
+                gridData[y][x].power = 0;
+                
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                cell.className = 'cell';
+                
+                // Удаляем все дочерние элементы (уровень мощности)
+                while (cell.firstChild) {
+                    cell.removeChild(cell.firstChild);
+                }
+                
+                updateCircuit();
+            }
+            
+            // Переключение рычага
+            function toggleLever(x, y) {
+                gridData[y][x].active = !gridData[y][x].active;
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                
+                if (gridData[y][x].active) {
+                    cell.classList.add('active');
+                    gridData[y][x].power = 15;
+                } else {
+                    cell.classList.remove('active');
+                    gridData[y][x].power = 0;
+                }
+                
+                updateCircuit();
+            }
+            
+            // Обновление цепи
+            function updateCircuit() {
+                // Сначала сбросим все активные состояния, кроме рычагов
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type !== 'lever' && gridData[y][x].type !== 'empty') {
+                            gridData[y][x].active = false;
+                            gridData[y][x].power = 0;
+                            const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                            cell.classList.remove('active');
+                            
+                            // Удаляем отображение уровня мощности
+                            const powerLevel = cell.querySelector('.power-level');
+                            if (powerLevel) {
+                                powerLevel.textContent = '';
+                            }
+                        }
+                    }
+                }
+                
+                // Затем распространим сигнал от активных рычагов
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'lever' && gridData[y][x].active) {
+                            propagateSignal(x, y, 15);
+                        }
+                    }
+                }
+            }
+            
+            // Распространение сигнала (рекурсивная функция)
+            function propagateSignal(x, y, power) {
+                if (power <= 0) return;
+                
+                // Получаем данные текущей ячейки
+                const cellData = gridData[y][x];
+                
+                // Если это провод или удлинитель, активируем его
+                if (cellData.type === 'wire' || cellData.type === 'repeater') {
+                    cellData.active = true;
+                    cellData.power = power;
+                    const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                    cell.classList.add('active');
+                    
+                    // Добавляем отображение уровня сигнала
+                    let powerLevel = cell.querySelector('.power-level');
+                    if (!powerLevel) {
+                        powerLevel = document.createElement('div');
+                        powerLevel.className = 'power-level';
+                        cell.appendChild(powerLevel);
+                    }
+                    powerLevel.textContent = power;
+                    
+                    // Для удлинителя усиливаем сигнал
+                    const newPower = cellData.type === 'repeater' ? 15 : power - 1;
+                    
+                    // Проверяем все направления для продолжения сигнала
+                    const directions = [
+                        { dx: 1, dy: 0 },  // вправо
+                        { dx: -1, dy: 0 }, // влево
+                        { dx: 0, dy: 1 },  // вниз
+                        { dx: 0, dy: -1 }  // вверх
+                    ];
+                    
+                    for (const dir of directions) {
+                        const nx = x + dir.dx;
+                        const ny = y + dir.dy;
+                        
+                        // Проверяем, что новая позиция в пределах сетки
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            const neighbor = gridData[ny][nx];
+                            
+                            // Продолжаем сигнал, если сосед - провод, удлинитель или лампа
+                            if ((neighbor.type === 'wire' || neighbor.type === 'repeater' || neighbor.type === 'lamp') && 
+                                !neighbor.active) {
+                                propagateSignal(nx, ny, newPower);
+                            }
+                        }
+                    }
+                }
+                // Если это лампа, просто активируем ее
+                else if (cellData.type === 'lamp') {
+                    cellData.active = true;
+                    const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                    cell.classList.add('active');
+                }
+            }
+            
+            // Очистка сетки
+            clearBtn.addEventListener('click', function() {
+                initGrid();
+            });
+            
+            // Сброс цепи
+            resetBtn.addEventListener('click', function() {
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'lever') {
+                            gridData[y][x].active = false;
+                            gridData[y][x].power = 0;
+                            const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                            cell.classList.remove('active');
+                        }
+                    }
+                }
+                updateCircuit();
+            });
+            
+            // Инициализация при загрузке
+            initGrid();
+        });
+    </script>
+</body>
+</html>
