@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Электрик 2D</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial; -webkit-tap-highlight-color: transparent; }
+        body { background: #1a1a2e; color: #e6e6e6; padding: 8px; touch-action: manipulation; }
+        header { text-align: center; padding: 10px; background: #16213e; border-radius: 8px; margin-bottom: 10px; }
+        h1 { color: #ff9a3c; margin-bottom: 4px; font-size: 1.4rem; }
+        .subtitle { font-size: 0.8rem; color: #8ecddd; }
+        .container { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 150px); }
+        @media (min-width: 768px) { .container { flex-direction: row; height: calc(100vh - 120px); } }
+        .toolbar { background: #16213e; border-radius: 8px; padding: 12px; order: 2; }
+        @media (min-width: 768px) { .toolbar { order: 1; width: 160px; } }
+        .toolbar h2 { color: #ff9a3c; margin-bottom: 12px; font-size: 1.1rem; text-align: center; }
+        .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+        @media (min-width: 768px) { .tools { grid-template-columns: 1fr; } }
+        .tool { background: #0f3460; border: 2px solid #8ecddd; border-radius: 6px; padding: 10px 6px; cursor: pointer; text-align: center; font-size: 0.8rem; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
+        .tool:active { transform: scale(0.95); }
+        .tool.active { border-color: #ff9a3c; background: #1a3a5f; }
+        .workspace { flex: 1; background: #16213e; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; order: 1; }
+        .workspace-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        @media (min-width: 480px) { .workspace-header { flex-direction: row; justify-content: space-between; align-items: center; } }
+        .workspace-title { color: #ff9a3c; font-size: 1.2rem; text-align: center; }
+        .controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        @media (min-width: 480px) { .controls { grid-template-columns: repeat(4, 1fr); } }
+        button { background: #0f3460; color: #e6e6e6; border: none; padding: 10px 8px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; min-height: 44px; transition: all 0.2s; }
+        button:active { transform: scale(0.95); background: #1a3a5f; }
+        .grid-container { flex: 1; background: #0f3460; border-radius: 6px; overflow: auto; padding: 8px; -webkit-overflow-scrolling: touch; }
+        #grid { display: grid; grid-template-columns: repeat(25, 20px); grid-template-rows: repeat(20, 20px); gap: 1px; margin: 0 auto; touch-action: none; }
+        .cell { width: 20px; height: 20px; background: #1a3a5f; border: 1px solid #2a4a7a; cursor: pointer; position: relative; font-size: 10px; display: flex; align-items: center; justify-content: center; user-select: none; }
+        .lever { background: #795548; }
+        .lever.active { background: #ff9800; box-shadow: 0 0 5px #ff9800; }
+        .wire { background: #5d4037; }
+        .wire.active { background: #f44336; box-shadow: 0 0 4px #f44336; }
+        .repeater { background: #4e342e; }
+        .repeater.active { background: #e53935; box-shadow: 0 0 4px #e53935; }
+        .lamp { background: #37474f; border-radius: 50%; }
+        .lamp.active { background: #ffeb3b; box-shadow: 0 0 6px #ffeb3b; }
+        .mover { background: #1565c0; border-radius: 3px; }
+        .mover.active { background: #2196f3; box-shadow: 0 0 4px #2196f3; }
+        .turner { background: #2e7d32; border-radius: 3px; }
+        .turner.active { background: #4caf50; box-shadow: 0 0 4px #4caf50; }
+        .toucher { background: #6a1b9a; border-radius: 3px; }
+        .toucher.active { background: #9c27b0; box-shadow: 0 0 4px #9c27b0; }
+        .stopper { background: #d32f2f; border-radius: 3px; }
+        .stopper.active { background: #f44336; box-shadow: 0 0 4px #f44336; }
+        .cycler { background: #ff6f00; border-radius: 3px; }
+        .cycler.active { background: #ff9800; box-shadow: 0 0 4px #ff9800; }
+        .walker { background: #00796b; border-radius: 3px; }
+        .walker.active { background: #009688; box-shadow: 0 0 4px #009688; }
+        .walker-path { background: #1a3a5f; border: 1px solid #4CAF50; }
+        .walker-path.active { background: #4CAF50; box-shadow: 0 0 4px #4CAF50; }
+        .mode-selector { display: flex; margin-top: 12px; gap: 6px; }
+        .mode-btn { flex: 1; text-align: center; padding: 10px; background: #0f3460; cursor: pointer; font-size: 0.9rem; border-radius: 6px; min-height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .mode-btn.active { background: #ff9a3c; color: #1a1a2e; }
+        .direction-indicator { position: absolute; font-size: 8px; color: white; font-weight: bold; }
+        .bullet { position: absolute; width: 12px; height: 12px; background: #ffeb3b; border-radius: 50%; z-index: 10; }
+        .instructions { background: #16213e; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 0.8rem; }
+        .instructions h3 { color: #ff9a3c; margin-bottom: 8px; font-size: 0.9rem; }
+        .instructions ul { padding-left: 16px; line-height: 1.4; }
+        .instructions li { margin-bottom: 4px; font-size: 0.75rem; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+        .modal-content { background: #16213e; padding: 20px; border-radius: 10px; text-align: center; max-width: 300px; margin: 20px; }
+        .modal h3 { color: #ff9a3c; margin-bottom: 15px; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 15px; }
+        .modal-buttons button { flex: 1; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Электрик 2D</h1>
+        <div class="subtitle">2D симулятор редстоуна</div>
+    </header>
+    
+    <div class="container">
+        <div class="toolbar">
+            <h2>Компоненты</h2>
+            <div class="tools">
+                <div class="tool active" data-type="lever">⚡ Рычаг</div>
+                <div class="tool" data-type="wire">🔌 Провод</div>
+                <div class="tool" data-type="repeater">🔁 Удлинитель</div>
+                <div class="tool" data-type="lamp">💡 Лампа</div>
+                <div class="tool" data-type="mover">🚀 Движок</div>
+                <div class="tool" data-type="turner">↻ Поворот</div>
+                <div class="tool" data-type="toucher">👆 Касальщик</div>
+                <div class="tool" data-type="stopper">🛑 Остановщик</div>
+                <div class="tool" data-type="cycler">🔄 Циклер</div>
+                <div class="tool" data-type="walker">🚶 Ходовой</div>
+            </div>
+            
+            <div class="mode-selector">
+                <div class="mode-btn active" data-mode="place">🛠️ Ставить</div>
+                <div class="mode-btn" data-mode="delete">🗑️ Удалить</div>
+            </div>
+        </div>
+        
+        <div class="workspace">
+            <div class="workspace-header">
+                <h2 class="workspace-title">Рабочая область</h2>
+                <div class="controls">
+                    <button id="clearBtn">🧹 Очистить</button>
+                    <button id="resetBtn">🔄 Сбросить</button>
+                    <button id="startBtn">▶️ Старт</button>
+                    <button id="stopBtn">⏹️ Стоп</button>
+                </div>
+            </div>
+            <div class="grid-container">
+                <div id="grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>Как использовать:</h3>
+        <ul>
+            <li><strong>Рычаг</strong> - источник сигнала</li>
+            <li><strong>Провод</strong> - передает сигнал</li>
+            <li><strong>Удлинитель</strong> - усиливает сигнал</li>
+            <li><strong>Движок</strong> - стреляет пулями</li>
+            <li><strong>Поворот</strong> - меняет направление</li>
+            <li><strong>Касальщик</strong> - активируется от пуль</li>
+            <li><strong>Остановщик</strong> - останавливает пули</li>
+            <li><strong>Циклер</strong> - моргает 5 раз/сек</li>
+            <li><strong>Ходовой</strong> - ходит по заданному пути</li>
+        </ul>
+    </div>
+
+    <div id="walkerModal" class="modal">
+        <div class="modal-content">
+            <h3>Выберите путь для Ходового</h3>
+            <p>Кликните на ячейки для создания пути (зеленые)</p>
+            <p>Первая ячейка - начальная позиция</p>
+            <div class="modal-buttons">
+                <button id="okWalker">OK</button>
+                <button id="cancelWalker">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const grid = document.getElementById('grid');
+            const tools = document.querySelectorAll('.tool');
+            const modeBtns = document.querySelectorAll('.mode-btn');
+            const clearBtn = document.getElementById('clearBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const walkerModal = document.getElementById('walkerModal');
+            const cancelWalkerBtn = document.getElementById('cancelWalker');
+            const okWalkerBtn = document.getElementById('okWalker');
+            
+            let selectedTool = 'lever';
+            let currentMode = 'place';
+            let gridData = [];
+            const gridWidth = 25;
+            const gridHeight = 20;
+            let isSimulationRunning = false;
+            let simulationInterval = null;
+            let bullets = [];
+            let isSelectingWalkerPath = false;
+            let walkerPath = [];
+            let walkerCurrentIndex = 0;
+            let walkerDirection = 1;
+            
+            function initGrid() {
+                grid.innerHTML = '';
+                gridData = [];
+                bullets = [];
+                stopSimulation();
+                
+                for (let y = 0; y < gridHeight; y++) {
+                    gridData[y] = [];
+                    for (let x = 0; x < gridWidth; x++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.dataset.x = x;
+                        cell.dataset.y = y;
+                        
+                        cell.addEventListener('click', function() {
+                            handleCellClick(x, y);
+                        });
+                        
+                        grid.appendChild(cell);
+                        gridData[y][x] = { 
+                            type: 'empty', 
+                            active: false,
+                            direction: 'right',
+                            pathIndex: -1
+                        };
+                    }
+                }
+            }
+            
+            function handleCellClick(x, y) {
+                if (isSelectingWalkerPath) {
+                    if (gridData[y][x].type === 'empty') {
+                        if (walkerPath.length === 0) {
+                            gridData[y][x].type = 'walker';
+                            gridData[y][x].pathIndex = 0;
+                        } else {
+                            gridData[y][x].type = 'walker-path';
+                            gridData[y][x].pathIndex = walkerPath.length;
+                        }
+                        
+                        walkerPath.push({x, y});
+                        updateCellDisplay(x, y);
+                    }
+                    return;
+                }
+                
+                if (currentMode === 'delete') {
+                    removeComponent(x, y);
+                    return;
+                }
+                
+                if (gridData[y][x].type !== 'empty') {
+                    if (gridData[y][x].type === 'lever') {
+                        toggleLever(x, y);
+                    } else if (gridData[y][x].type === 'turner' || gridData[y][x].type === 'mover' || gridData[y][x].type === 'cycler') {
+                        rotateComponent(x, y);
+                    }
+                } else {
+                    if (selectedTool === 'walker') {
+                        startPathSelection(x, y);
+                    } else {
+                        placeComponent(x, y);
+                    }
+                }
+            }
+            
+            function startPathSelection(x, y) {
+                walkerPath = [];
+                isSelectingWalkerPath = true;
+                walkerModal.style.display = 'flex';
+            }
+            
+            function finishPathSelection() {
+                isSelectingWalkerPath = false;
+                walkerModal.style.display = 'none';
+                walkerCurrentIndex = 0;
+                walkerDirection = 1;
+                
+                if (walkerPath.length > 0) {
+                    const startPos = walkerPath[0];
+                    gridData[startPos.y][startPos.x].active = true;
+                    updateCellDisplay(startPos.x, startPos.y);
+                    
+                    if (gridData[startPos.y][startPos.x].active) {
+                        propagateSignal(startPos.x, startPos.y, 15, new Set());
+                    }
+                }
+            }
+            
+            function placeComponent(x, y) {
+                gridData[y][x].type = selectedTool;
+                gridData[y][x].active = false;
+                if (selectedTool === 'mover' || selectedTool === 'turner' || selectedTool === 'cycler') {
+                    gridData[y][x].direction = 'right';
+                }
+                updateCellDisplay(x, y);
+            }
+            
+            function removeComponent(x, y) {
+                if (gridData[y][x].pathIndex >= 0) {
+                    const pathIndex = gridData[y][x].pathIndex;
+                    walkerPath.splice(pathIndex, 1);
+                    
+                    for (let i = 0; i < gridHeight; i++) {
+                        for (let j = 0; j < gridWidth; j++) {
+                            if (gridData[i][j].pathIndex > pathIndex) {
+                                gridData[i][j].pathIndex--;
+                            }
+                        }
+                    }
+                    
+                    if (walkerCurrentIndex === pathIndex) {
+                        if (walkerPath.length > 0) {
+                            walkerCurrentIndex = Math.min(walkerCurrentIndex, walkerPath.length - 1);
+                            const newPos = walkerPath[walkerCurrentIndex];
+                            gridData[newPos.y][newPos.x].type = 'walker';
+                            gridData[newPos.y][newPos.x].active = true;
+                            updateCellDisplay(newPos.x, newPos.y);
+                        }
+                    }
+                }
+                
+                gridData[y][x].type = 'empty';
+                gridData[y][x].active = false;
+                gridData[y][x].pathIndex = -1;
+                updateCellDisplay(x, y);
+            }
+            
+            function rotateComponent(x, y) {
+                const directions = ['right', 'down', 'left', 'up'];
+                const currentIndex = directions.indexOf(gridData[y][x].direction);
+                gridData[y][x].direction = directions[(currentIndex + 1) % 4];
+                updateCellDisplay(x, y);
+            }
+            
+            function toggleLever(x, y) {
+                gridData[y][x].active = !gridData[y][x].active;
+                updateCellDisplay(x, y);
+                if (gridData[y][x].active) {
+                    updateCircuit();
+                } else {
+                    resetCircuit();
+                }
+            }
+            
+            function updateCellDisplay(x, y) {
+                const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+                const cellData = gridData[y][x];
+                cell.className = `cell ${cellData.type}`;
+                if (cellData.active) cell.classList.add('active');
+                
+                const oldIndicator = cell.querySelector('.direction-indicator');
+                if (oldIndicator) oldIndicator.remove();
+                
+                if ((cellData.type === 'mover' || cellData.type === 'turner' || cellData.type === 'cycler') && cellData.direction) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'direction-indicator';
+                    switch(cellData.direction) {
+                        case 'right': indicator.textContent = '→'; break;
+                        case 'down': indicator.textContent = '↓'; break;
+                        case 'left': indicator.textContent = '←'; break;
+                        case 'up': indicator.textContent = '↑'; break;
+                    }
+                    cell.appendChild(indicator);
+                }
+            }
+            
+            function updateCircuit() {
+                resetCircuit();
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'lever' && gridData[y][x].active) {
+                            propagateSignal(x, y, 15, new Set());
+                        }
+                    }
+                }
+            }
+            
+            function propagateSignal(x, y, power, visited) {
+                if (power <= 0) return;
+                const key = `${x},${y}`;
+                if (visited.has(key)) return;
+                visited.add(key);
+                
+                const cellData = gridData[y][x];
+                if (cellData.type !== 'empty' && cellData.type !== 'lever' && !cellData.active) {
+                    cellData.active = true;
+                    updateCellDisplay(x, y);
+                    
+                    if (cellData.type === 'repeater') power = 15;
+                    else power--;
+                    
+                    if (cellData.type === 'lamp') return;
+                }
+                
+                const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
+                for (const dir of directions) {
+                    const nx = x + dir.dx, ny = y + dir.dy;
+                    if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                        const neighbor = gridData[ny][nx];
+                        if (neighbor.type !== 'empty' && neighbor.type !== 'lever') {
+                            propagateSignal(nx, ny, power, new Set(visited));
+                        }
+                    }
+                }
+            }
+            
+            function startSimulation() {
+                if (isSimulationRunning) return;
+                isSimulationRunning = true;
+                
+                let lastUpdate = 0;
+                let lastWalkerUpdate = 0;
+                let lastCyclerUpdate = 0;
+                simulationInterval = setInterval(() => {
+                    const now = Date.now();
+                    
+                    if (now - lastUpdate > 500) {
+                        updateBullets();
+                        updateMovers();
+                        lastUpdate = now;
+                    }
+                    
+                    if (now - lastWalkerUpdate > 250) {
+                        updateWalkers();
+                        lastWalkerUpdate = now;
+                    }
+                    
+                    if (now - lastCyclerUpdate > 200) {
+                        updateCyclers();
+                        lastCyclerUpdate = now;
+                    }
+                }, 100);
+            }
+            
+            function stopSimulation() {
+                isSimulationRunning = false;
+                if (simulationInterval) {
+                    clearInterval(simulationInterval);
+                    simulationInterval = null;
+                }
+                bullets = [];
+                document.querySelectorAll('.bullet').forEach(bullet => bullet.remove());
+            }
+            
+            function updateCyclers() {
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'cycler') {
+                            gridData[y][x].active = !gridData[y][x].active;
+                            updateCellDisplay(x, y);
+                            if (gridData[y][x].active) {
+                                propagateSignal(x, y, 15, new Set());
+                            }
+                        }
+                    }
+                }
+            }
+            
+            function updateWalkers() {
+                if (walkerPath.length < 2) return;
+                
+                const currentPos = walkerPath[walkerCurrentIndex];
+                gridData[currentPos.y][currentPos.x].active = false;
+                updateCellDisplay(currentPos.x, currentPos.y);
+                
+                let nextIndex = walkerCurrentIndex + walkerDirection;
+                
+                if (nextIndex < 0 || nextIndex >= walkerPath.length) {
+                    walkerDirection *= -1;
+                    nextIndex = walkerCurrentIndex + walkerDirection;
+                }
+                
+                walkerCurrentIndex = nextIndex;
+                const nextPos = walkerPath[walkerCurrentIndex];
+                
+                gridData[currentPos.y][currentPos.x].type = 'walker-path';
+                gridData[nextPos.y][nextPos.x].type = 'walker';
+                gridData[nextPos.y][nextPos.x].active = true;
+                
+                updateCellDisplay(currentPos.x, currentPos.y);
+                updateCellDisplay(nextPos.x, nextPos.y);
+                
+                if (gridData[nextPos.y][nextPos.x].active) {
+                    propagateSignal(nextPos.x, nextPos.y, 15, new Set());
+                }
+            }
+            
+            function updateMovers() {
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'mover' && gridData[y][x].active) {
+                            bullets.push({
+                                x: x,
+                                y: y,
+                                direction: gridData[y][x].direction
+                            });
+                        }
+                    }
+                }
+            }
+            
+            function updateBullets() {
+                const newBullets = [];
+                document.querySelectorAll('.bullet').forEach(bullet => bullet.remove());
+                
+                for (const bullet of bullets) {
+                    let {x, y, direction} = bullet;
+                    let nx = x, ny = y;
+                    switch(direction) {
+                        case 'right': nx = x + 1; break;
+                        case 'down': ny = y + 1; break;
+                        case 'left': nx = x - 1; break;
+                        case 'up': ny = y - 1; break;
+                    }
+                    
+                    if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                        const nextCell = gridData[ny][nx];
+                        
+                        if (nextCell.type === 'stopper') continue;
+                        if (nextCell.type === 'turner') direction = nextCell.direction;
+                        if (nextCell.type === 'toucher') {
+                            nextCell.active = true;
+                            updateCellDisplay(nx, ny);
+                            propagateSignal(nx, ny, 15, new Set());
+                        }
+                        
+                        newBullets.push({x: nx, y: ny, direction});
+                        
+                        const cell = document.querySelector(`.cell[data-x="${nx}"][data-y="${ny}"]`);
+                        if (cell) {
+                            const bulletElement = document.createElement('div');
+                            bulletElement.className = 'bullet';
+                            cell.appendChild(bulletElement);
+                        }
+                    }
+                }
+                bullets = newBullets;
+            }
+            
+            function resetCircuit() {
+                stopSimulation();
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type !== 'lever') {
+                            gridData[y][x].active = false;
+                        }
+                        updateCellDisplay(x, y);
+                    }
+                }
+            }
+            
+            // События
+            tools.forEach(tool => {
+                tool.addEventListener('click', function() {
+                    tools.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    selectedTool = this.dataset.type;
+                });
+            });
+            
+            modeBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    modeBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentMode = this.dataset.mode;
+                });
+            });
+            
+            clearBtn.addEventListener('click', initGrid);
+            resetBtn.addEventListener('click', resetCircuit);
+            startBtn.addEventListener('click', startSimulation);
+            stopBtn.addEventListener('click', stopSimulation);
+            cancelWalkerBtn.addEventListener('click', function() {
+                walkerModal.style.display = 'none';
+                isSelectingWalkerPath = false;
+                for (const pos of walkerPath) {
+                    gridData[pos.y][pos.x].type = 'empty';
+                    gridData[pos.y][pos.x].pathIndex = -1;
+                    updateCellDisplay(pos.x, pos.y);
+                }
+                walkerPath = [];
+            });
+            
+            okWalkerBtn.addEventListener('click', finishPathSelection);
+            
+            initGrid();
+        });
+    </script>
+</body>
+      </html>
