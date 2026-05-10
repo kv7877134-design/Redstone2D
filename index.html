@@ -6,31 +6,31 @@
     <title>Электрик 2D</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial; -webkit-tap-highlight-color: transparent; }
-        body { background: #1a1a2e; color: #e6e6e6; padding: 8px; touch-action: manipulation; overflow-x: hidden; }
-        header { text-align: center; padding: 10px; background: #16213e; border-radius: 8px; margin-bottom: 10px; }
+        body { background: #1a1a2e; color: #e6e6e6; padding: 8px; touch-action: manipulation; overflow-x: hidden; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
+        header { text-align: center; padding: 10px; background: #16213e; border-radius: 8px; margin-bottom: 10px; flex-shrink: 0; }
         h1 { color: #ff9a3c; margin-bottom: 4px; font-size: 1.4rem; }
         .subtitle { font-size: 0.8rem; color: #8ecddd; }
-        .container { display: flex; flex-direction: column; gap: 10px; height: calc(100vh - 150px); }
-        @media (min-width: 768px) { .container { flex-direction: row; height: calc(100vh - 120px); } }
-        .toolbar { background: #16213e; border-radius: 8px; padding: 12px; order: 2; }
-        @media (min-width: 768px) { .toolbar { order: 1; width: 180px; } }
+        .container { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+        @media (min-width: 768px) { .container { flex-direction: row; } }
+        .toolbar { background: #16213e; border-radius: 8px; padding: 12px; order: 2; display: flex; flex-direction: column; max-height: 40vh; overflow-y: auto; }
+        @media (min-width: 768px) { .toolbar { order: 1; width: 220px; max-height: none; } }
         .toolbar h2 { color: #ff9a3c; margin-bottom: 12px; font-size: 1.1rem; text-align: center; }
-        .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
-        @media (min-width: 768px) { .tools { grid-template-columns: 1fr; } }
-        .tool { background: #0f3460; border: 2px solid #8ecddd; border-radius: 6px; padding: 10px 6px; cursor: pointer; text-align: center; font-size: 0.8rem; min-height: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; }
+        .tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+        @media (min-width: 768px) { .tools { grid-template-columns: repeat(2, 1fr); } }
+        .tool { background: #0f3460; border: 2px solid #8ecddd; border-radius: 6px; padding: 8px 4px; cursor: pointer; text-align: center; font-size: 0.7rem; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: all 0.2s; word-break: break-word; }
         .tool:active { transform: scale(0.95); }
         .tool.active { border-color: #ff9a3c; background: #1a3a5f; }
-        .workspace { flex: 1; background: #16213e; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; order: 1; }
-        .workspace-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .workspace { flex: 1; background: #16213e; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; order: 1; min-height: 0; }
+        .workspace-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; flex-shrink: 0; }
         @media (min-width: 480px) { .workspace-header { flex-direction: row; justify-content: space-between; align-items: center; } }
         .workspace-title { color: #ff9a3c; font-size: 1.2rem; text-align: center; }
         .controls { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
         @media (min-width: 480px) { .controls { grid-template-columns: repeat(4, 1fr); } }
         button { background: #0f3460; color: #e6e6e6; border: none; padding: 10px 8px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; min-height: 44px; transition: all 0.2s; }
         button:active { transform: scale(0.95); background: #1a3a5f; }
-        .grid-container { flex: 1; background: #0f3460; border-radius: 6px; overflow: auto; padding: 8px; -webkit-overflow-scrolling: touch; position: relative; }
-        #grid { display: grid; grid-template-columns: repeat(30, 20px); grid-template-rows: repeat(30, 20px); gap: 1px; margin: 0 auto; touch-action: none; }
-        .cell { width: 20px; height: 20px; background: #1a3a5f; border: 1px solid #2a4a7a; cursor: pointer; position: relative; font-size: 10px; display: flex; align-items: center; justify-content: center; user-select: none; }
+        .grid-container { flex: 1; background: #0f3460; border-radius: 6px; overflow: auto; padding: 10px; -webkit-overflow-scrolling: touch; position: relative; min-height: 0; }
+        #grid { display: grid; grid-template-columns: repeat(30, 32px); grid-template-rows: repeat(30, 32px); gap: 1px; margin: 0; touch-action: pinch-zoom; }
+        .cell { width: 32px; height: 32px; background: #1a3a5f; border: 1px solid #2a4a7a; cursor: pointer; position: relative; font-size: 12px; display: flex; align-items: center; justify-content: center; user-select: none; }
         .lever { background: #795548; }
         .lever.active { background: #ff9800; box-shadow: 0 0 5px #ff9800; }
         .wire { background: #5d4037; }
@@ -56,13 +56,45 @@
         .walker-start { background: rgba(0, 121, 107, 0.8); border: 2px solid #00bcd4; box-shadow: 0 0 6px #00bcd4; }
         .linker { background: #8e24aa; border-radius: 3px; }
         .linker.active { background: #ab47bc; box-shadow: 0 0 4px #ab47bc; }
+        .battery { background: #fbc02d; border-radius: 3px; }
+        .battery.active { background: #fff176; box-shadow: 0 0 8px #fff176; }
+        .button { background: #757575; border-radius: 50%; }
+        .button.active { background: #bdbdbd; box-shadow: 0 0 4px #bdbdbd; }
+        .noteblock { background: #5d4037; border: 2px solid #3e2723; }
+        .noteblock.active { background: #795548; box-shadow: 0 0 4px #795548; }
+        .randomizer { background: #455a64; border: 2px dashed #90a4ae; }
+        .randomizer.active { background: #607d8b; }
+        .tnt { background: #d32f2f; border: 1px solid #000; font-weight: bold; }
+        .tnt.active { background: #f44336; animation: tntBlink 0.2s infinite; }
+        @keyframes tntBlink {
+            0% { background: #d32f2f; }
+            100% { background: #fff; }
+        }
+        .notgate { background: #9e9e9e; border: 2px solid #212121; }
+        .notgate.active { background: #f44336; box-shadow: 0 0 4px #f44336; }
+        .andgate { background: #3f51b5; border: 2px solid #1a237e; }
+        .andgate.active { background: #7986cb; box-shadow: 0 0 4px #7986cb; }
+        .pressureplate { background: #bdbdbd; border: 1px solid #757575; border-radius: 2px; transform: scale(0.8); }
+        .pressureplate.active { background: #e0e0e0; transform: scale(0.7); box-shadow: 0 0 4px #e0e0e0; }
+        .wall { background: #424242; border: 1px solid #212121; }
+        .delay { background: #ff5722; border: 2px solid #bf360c; }
+        .delay.active { background: #ffab91; box-shadow: 0 0 4px #ffab91; }
+        .explosion {
+            background: radial-gradient(circle, #ffeb3b, #ff9800, #f44336);
+            animation: explodeAnimation 0.5s forwards;
+            z-index: 20;
+        }
+        @keyframes explodeAnimation {
+            0% { transform: scale(0.1); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
         .webview { background: #ffffff; border: 1px solid #ccc; }
         .mode-selector { display: flex; margin-top: 12px; gap: 6px; }
         .mode-btn { flex: 1; text-align: center; padding: 10px; background: #0f3460; cursor: pointer; font-size: 0.9rem; border-radius: 6px; min-height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
         .mode-btn.active { background: #ff9a3c; color: #1a1a2e; }
         .direction-indicator { position: absolute; font-size: 8px; color: white; font-weight: bold; }
         .bullet { position: absolute; width: 12px; height: 12px; background: #ffeb3b; border-radius: 50%; z-index: 10; }
-        .instructions { background: #16213e; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 0.8rem; }
+        .instructions { background: #16213e; border-radius: 8px; padding: 12px; margin-top: 10px; font-size: 0.8rem; flex-shrink: 0; }
         .instructions h3 { color: #ff9a3c; margin-bottom: 8px; font-size: 0.9rem; }
         .instructions ul { padding-left: 16px; line-height: 1.4; }
         .instructions li { margin-bottom: 4px; font-size: 0.75rem; }
@@ -179,6 +211,16 @@
                 <div class="tool" data-type="cycler">🔄 Циклер</div>
                 <div class="tool" data-type="walker">🚶 Ходовой</div>
                 <div class="tool" data-type="linker">🔗 Ссылочник</div>
+                <div class="tool" data-type="battery">🔋 Батарея</div>
+                <div class="tool" data-type="button">🔘 Кнопка</div>
+                <div class="tool" data-type="noteblock">🎶 Нота</div>
+                <div class="tool" data-type="randomizer">🎲 Рандом</div>
+                <div class="tool" data-type="tnt">🧨 ТНТ</div>
+                <div class="tool" data-type="notgate">❗ НЕ</div>
+                <div class="tool" data-type="andgate">➕ И</div>
+                <div class="tool" data-type="pressureplate">🟫 Плита</div>
+                <div class="tool" data-type="wall">🧱 Стена</div>
+                <div class="tool" data-type="delay">⏳ Задержка</div>
             </div>
             
             <div class="mode-selector">
@@ -249,6 +291,16 @@
             <li><strong>Циклер</strong> - моргает 5 раз/сек</li>
             <li><strong>Ходовой</strong> - ходит по заданному пути</li>
             <li><strong>Ссылочник</strong> - открывает сайт при активации (с подтверждением)</li>
+            <li><strong>Батарея</strong> - постоянный источник энергии</li>
+            <li><strong>Кнопка</strong> - дает сигнал на 1 секунду</li>
+            <li><strong>Нота</strong> - издает звук при активации</li>
+            <li><strong>Рандом</strong> - передает сигнал случайному соседу</li>
+            <li><strong>ТНТ</strong> - взрывается через 1.5 сек после активации</li>
+            <li><strong>НЕ</strong> - инвертирует сигнал</li>
+            <li><strong>И</strong> - активируется при 2+ входящих сигналах</li>
+            <li><strong>Плита</strong> - активируется кем-то сверху</li>
+            <li><strong>Стена</strong> - непроходимый блок</li>
+            <li><strong>Задержка</strong> - передает сигнал с задержкой 2 сек</li>
         </ul>
     </div>
 
@@ -295,7 +347,36 @@
             let signalPropagationInterval = null;
             let pendingLinkActivation = null;
             
+            let logicInterval = null;
+
+            function updateLogicBlocks() {
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        const cell = gridData[y][x];
+                        if (cell.type === 'notgate') {
+                            let hasInput = false;
+                            const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
+                            for (const dir of directions) {
+                                const nx = x + dir.dx, ny = y + dir.dy;
+                                if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                                    const neighbor = gridData[ny][nx];
+                                    if (neighbor.active && neighbor.type !== 'notgate') hasInput = true;
+                                }
+                            }
+                            const shouldBeActive = !hasInput;
+                            if (cell.active !== shouldBeActive) {
+                                cell.active = shouldBeActive;
+                                updateCellDisplay(x, y);
+                                if (cell.active) startSignalPropagation(x, y);
+                            }
+                        }
+                    }
+                }
+            }
+
             function initGrid() {
+                if (logicInterval) clearInterval(logicInterval);
+                logicInterval = setInterval(updateLogicBlocks, 500);
                 grid.innerHTML = '';
                 gridData = [];
                 bullets = [];
@@ -396,6 +477,60 @@
                 webviewFrame.src = '';
                 activeWebView = null;
             }
+
+            function playNote(x, y) {
+                const cellData = gridData[y][x];
+                cellData.blinking = true;
+                cellData.active = true;
+                updateCellDisplay(x, y);
+
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    oscillator.type = 'square';
+                    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.5);
+                } catch (e) {
+                    console.log('Audio not supported or blocked');
+                }
+
+                setTimeout(() => {
+                    cellData.blinking = false;
+                    cellData.active = false;
+                    updateCellDisplay(x, y);
+                }, 500);
+            }
+
+            function explode(x, y) {
+                for (let dy = -1; dy <= 1; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const nx = x + dx;
+                        const ny = y + dy;
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            const cell = document.querySelector(`.cell[data-x="${nx}"][data-y="${ny}"]`);
+                            if (cell) {
+                                cell.classList.add('explosion');
+                                setTimeout(() => {
+                                    cell.classList.remove('explosion');
+                                }, 500);
+                            }
+                            gridData[ny][nx].type = 'empty';
+                            gridData[ny][nx].active = false;
+                            gridData[ny][nx].blinking = false;
+                            updateCellDisplay(nx, ny);
+                        }
+                    }
+                }
+            }
             
             function handleCellClick(x, y) {
                 if (isSelectingWalkerPath) {
@@ -424,6 +559,17 @@
                         toggleLever(x, y);
                     } else if (gridData[y][x].type === 'turner' || gridData[y][x].type === 'mover' || gridData[y][x].type === 'cycler') {
                         rotateComponent(x, y);
+                    } else if (gridData[y][x].type === 'button') {
+                        if (!gridData[y][x].active) {
+                            gridData[y][x].active = true;
+                            updateCellDisplay(x, y);
+                            startSignalPropagation(x, y);
+                            setTimeout(() => {
+                                gridData[y][x].active = false;
+                                updateCellDisplay(x, y);
+                                resetCircuit();
+                            }, 1000);
+                        }
                     }
                 } else {
                     if (selectedTool === 'walker') {
@@ -462,6 +608,10 @@
                 gridData[y][x].blinking = false;
                 if (selectedTool === 'mover' || selectedTool === 'turner' || selectedTool === 'cycler') {
                     gridData[y][x].direction = 'right';
+                }
+                if (selectedTool === 'battery') {
+                    gridData[y][x].active = true;
+                    setTimeout(() => startSignalPropagation(x, y), 0);
                 }
                 updateCellDisplay(x, y);
             }
@@ -593,6 +743,7 @@
                 if (visited.has(key)) return;
                 visited.add(key);
                 
+                const cellData = gridData[y][x];
                 const cell = document.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
                 if (cell) {
                     cell.classList.add('signal-propagating');
@@ -600,41 +751,88 @@
                         cell.classList.remove('signal-propagating');
                     }, 450);
                 }
+
+                const isSource = cellData.type === 'lever' || cellData.type === 'battery' || cellData.type === 'button';
                 
-                const cellData = gridData[y][x];
-                
-                if (cellData.type === 'linker' && cellData.active && cellData.url) {
-                    if (!pendingLinkActivation) {
-                        showLinkNotification(cellData.url);
+                if (isSource && !cellData.active) return;
+
+                if (!cellData.active && !isSource) {
+                    cellData.active = true;
+                    updateCellDisplay(x, y);
+                }
+
+                if (cellData.type === 'lamp' || cellData.type === 'toucher' || cellData.type === 'stopper' || cellData.type === 'linker') {
+                    if (cellData.type === 'linker' && cellData.url) {
+                        if (!pendingLinkActivation) showLinkNotification(cellData.url);
                     }
                     return;
                 }
-                
-                if (cellData.type !== 'empty' && cellData.type !== 'lever' && !cellData.active) {
-                    if (cellData.type === 'lamp' || cellData.type === 'toucher' || cellData.type === 'stopper' || cellData.type === 'linker') {
-                        cellData.active = true;
-                        updateCellDisplay(x, y);
-                        return;
-                    }
-                    
-                    if (cellData.type === 'wire' || cellData.type === 'repeater') {
-                        cellData.active = true;
-                        cellData.cyclerActivated = false;
-                        updateCellDisplay(x, y);
-                        
-                        if (cellData.type === 'repeater') power = 15;
-                        else power--;
-                        
+
+                if (cellData.type === 'noteblock') {
+                    playNote(x, y);
+                    return;
+                }
+
+                if (cellData.type === 'tnt') {
+                    cellData.blinking = true;
+                    updateCellDisplay(x, y);
+                    setTimeout(() => explode(x, y), 1500);
+                    return;
+                }
+
+                if (cellData.type === 'delay') {
+                    setTimeout(() => {
                         const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
                         for (const dir of directions) {
                             const nx = x + dir.dx, ny = y + dir.dy;
                             if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
-                                const neighbor = gridData[ny][nx];
-                                if (neighbor.type === 'wire' || neighbor.type === 'repeater' || 
-                                    neighbor.type === 'lamp' || neighbor.type === 'toucher' || 
-                                    neighbor.type === 'linker') {
-                                    signalQueue.push({x: nx, y: ny, power, visited: new Set(visited)});
-                                }
+                                signalQueue.push({x: nx, y: ny, power: power - 1, visited: new Set(visited)});
+                            }
+                        }
+                    }, 2000);
+                    return;
+                }
+
+                if (cellData.type === 'andgate') {
+                    let activeInputs = 0;
+                    const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
+                    for (const dir of directions) {
+                        const nx = x + dir.dx, ny = y + dir.dy;
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            if (gridData[ny][nx].active) activeInputs++;
+                        }
+                    }
+                    if (activeInputs >= 2) {
+                        cellData.active = true;
+                        updateCellDisplay(x, y);
+                    } else {
+                        cellData.active = false;
+                        updateCellDisplay(x, y);
+                        return;
+                    }
+                }
+
+                if (cellData.type === 'wire' || cellData.type === 'repeater' || isSource || cellData.type === 'randomizer' || cellData.type === 'andgate' || cellData.type === 'pressureplate') {
+                    if (cellData.type === 'repeater') power = 15;
+                    else power--;
+
+                    if (cellData.type === 'randomizer') {
+                        const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
+                        const dir = directions[Math.floor(Math.random() * directions.length)];
+                        const nx = x + dir.dx, ny = y + dir.dy;
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            signalQueue.push({x: nx, y: ny, power, visited: new Set(visited)});
+                        }
+                        return;
+                    }
+
+                    const directions = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
+                    for (const dir of directions) {
+                        const nx = x + dir.dx, ny = y + dir.dy;
+                        if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                            const neighbor = gridData[ny][nx];
+                            if (neighbor.type !== 'empty') {
+                                signalQueue.push({x: nx, y: ny, power, visited: new Set(visited)});
                             }
                         }
                     }
@@ -787,6 +985,11 @@
                     const nx = nextPos.x + dir.dx, ny = nextPos.y + dir.dy;
                     if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
                         const neighbor = gridData[ny][nx];
+                        if (neighbor.type === 'pressureplate') {
+                            neighbor.active = true;
+                            updateCellDisplay(nx, ny);
+                            startSignalPropagation(nx, ny);
+                        }
                         if (neighbor.type === 'toucher') {
                             neighbor.active = true;
                             neighbor.blinking = true;
@@ -829,7 +1032,16 @@
                     if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
                         const nextCell = gridData[ny][nx];
                         
-                        if (nextCell.type === 'stopper') continue;
+                        if (nextCell.type === 'stopper' || nextCell.type === 'wall') continue;
+                        if (nextCell.type === 'pressureplate') {
+                            nextCell.active = true;
+                            updateCellDisplay(nx, ny);
+                            startSignalPropagation(nx, ny);
+                            setTimeout(() => {
+                                nextCell.active = false;
+                                updateCellDisplay(nx, ny);
+                            }, 500);
+                        }
                         if (nextCell.type === 'turner') direction = nextCell.direction;
                         if (nextCell.type === 'toucher') {
                             nextCell.active = true;
@@ -859,7 +1071,7 @@
                 hideLinkNotification();
                 for (let y = 0; y < gridHeight; y++) {
                     for (let x = 0; x < gridWidth; x++) {
-                        if (gridData[y][x].type !== 'lever') {
+                        if (gridData[y][x].type !== 'lever' && gridData[y][x].type !== 'battery') {
                             gridData[y][x].active = false;
                             gridData[y][x].cyclerActivated = false;
                             gridData[y][x].blinking = false;
@@ -867,6 +1079,16 @@
                         updateCellDisplay(x, y);
                     }
                 }
+
+                // Перезапуск батарей
+                for (let y = 0; y < gridHeight; y++) {
+                    for (let x = 0; x < gridWidth; x++) {
+                        if (gridData[y][x].type === 'battery') {
+                            startSignalPropagation(x, y);
+                        }
+                    }
+                }
+
                 cyclerActiveWires.clear();
                 blinkingComponents.clear();
                 pendingLinkActivation = null;
